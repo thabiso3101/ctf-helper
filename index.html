@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CTF Helper</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="A modern CTF Helper app created by Thabiso Thelingoane (GodOfTheNewWorld) - CTF champion and cybersecurity expert">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.png">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --text-color: #e2e8f0;
+      --card-bg: #1e293b;
+      --header-bg: #0f172a;
+      --footer-bg: #0f172a;
+      --sidebar-bg: #0f172a;
+      --accent-color: #6366f1;
+      --toggle-bg: #334155;
+    }
+    [data-theme="light"] {
+      --bg-color: #f8fafc;
+      --text-color: #0f172a;
+      --card-bg: #ffffff;
+      --header-bg: #e2e8f0;
+      --footer-bg: #e2e8f0;
+      --sidebar-bg: #e2e8f0;
+      --accent-color: #6366f1;
+      --toggle-bg: #cbd5e1;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .bg-primary { background-color: var(--bg-color); }
+    .bg-header { background-color: var(--header-bg); }
+    .bg-card { background-color: var(--card-bg); }
+    .bg-sidebar { background-color: var(--sidebar-bg); }
+    .text-primary { color: var(--text-color); }
+    .accent { color: var(--accent-color); }
+    .bg-accent { background-color: var(--accent-color); }
+    .sidebar-open { transform: translateX(0); }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+    .modal-content {
+      background-color: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s ease-out;
+    }
+    .modal.show .modal-content {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .tool-card {
+      transition: all 0.2s ease;
+      border-left: 4px solid var(--accent-color);
+    }
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .search-box {
+      background-color: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    [data-theme="light"] .search-box {
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .glow {
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+    }
+    .category-badge {
+      transition: all 0.2s ease;
+    }
+    .category-badge:hover {
+      transform: scale(1.05);
+    }
+    .profile-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent-color);
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--toggle-bg);
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent-color);
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .achievement-badge {
+      display: inline-flex;
+      align-items: center;
+      background-color: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--accent-color);
+      border-radius: 9999px;
+      padding: 0.25rem 0.75rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .grid-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body class="bg-primary text-primary min-h-screen flex flex-col">
+  <header class="bg-header p-4 fixed w-full top-0 z-50 flex justify-between items-center shadow-md">
+    <button id="menu-toggle" class="p-2 focus:outline-none rounded-full hover:bg-opacity-20 hover:bg-white transition" aria-label="Toggle menu" aria-expanded="false">
+      <i class="fas fa-bars text-xl"></i>
+    </button>
+    <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-500 to-indigo-500 bg-clip-text text-transparent">
+      CTF Helper <span class="text-xs font-normal">by GodOfTheNewWorld</span>
+    </h1>
+    <div class="w-10"></div> <!-- Spacer for balance -->
+  </header>
+
+  <aside id="sidebar" class="fixed top-0 left-0 w-64 h-full transform -translate-x-full transition-transform duration-300 z-40 bg-sidebar shadow-xl" aria-hidden="true">
+    <div class="p-4 h-full flex flex-col">
+      <div class="flex items-center mb-6 p-2 rounded-lg bg-opacity-20 bg-white">
+        <i class="fas fa-flag mr-3 text-accent"></i>
+        <h2 class="text-lg font-bold">CTF Helper</h2>
+      </div>
+      <ul class="space-y-2 flex-grow">
+        <li>
+          <a href="#categories" class="flex items-center p-3 hover:bg-opacity-20 hover:bg-white rounded-lg transition" onclick="scrollToSection('categories')">
+            <i class="fas fa-layer-group mr-3 text-accent"></i>
+            Categories
+          </a>
+        </li>
+        <li>
+          <a href="#favorites" class="flex items-center p-3 hover:bg-opacity-20 hover:bg-white rounded-lg transition" onclick="showFavorites()">
+            <i class="fas fa-star mr-3 text-yellow-400"></i>
+            Favorites
+          </a>
+        </li>
+        <li>
+          <button onclick="openCategoryModal()" class="w-full text-left flex items-center p-3 hover:bg-opacity-20 hover:bg-white rounded-lg transition">
+            <i class="fas fa-tags mr-3 text-accent"></i>
+            Manage Categories
+          </button>
+        </li>
+        <li>
+          <a href="#about" class="flex items-center p-3 hover:bg-opacity-20 hover:bg-white rounded-lg transition" onclick="scrollToSection('about')">
+            <i class="fas fa-info-circle mr-3 text-accent"></i>
+            About
+          </a>
+        </li>
+        <li class="flex items-center justify-between p-3">
+          <div class="flex items-center">
+            <i class="fas fa-moon mr-3 text-accent"></i>
+            <span>Dark Mode</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="theme-toggle-checkbox">
+            <span class="slider"></span>
+          </label>
+        </li>
+      </ul>
+      <div class="mt-auto p-3 text-sm text-opacity-70 text-primary">
+        Created by <span class="font-bold">Thabiso Thelingoane</span><br>
+        <span class="text-accent">@GodOfTheNewWorld</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Category Management Modal -->
+  <div id="category-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold flex items-center">
+          <i class="fas fa-tags mr-2 text-accent"></i>
+          Manage Categories
+        </h2>
+        <button onclick="closeModal('category-modal')" class="text-xl hover:text-accent transition">&times;</button>
+      </div>
+      
+      <div class="mb-6">
+        <h3 class="font-bold mb-2 flex items-center">
+          <i class="fas fa-plus-circle mr-2 text-accent"></i>
+          Add New Category
+        </h3>
+        <div class="flex gap-2">
+          <input type="text" id="new-category-name" placeholder="Category name" class="flex-grow p-2 rounded bg-card text-primary border border-opacity-20 focus:outline-none focus:ring-2 focus:ring-accent">
+          <select id="new-category-color" class="p-2 rounded bg-card text-primary border border-opacity-20 focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="bg-red-500">Red</option>
+            <option value="bg-blue-500">Blue</option>
+            <option value="bg-green-500">Green</option>
+            <option value="bg-yellow-500">Yellow</option>
+            <option value="bg-purple-500">Purple</option>
+            <option value="bg-indigo-500">Indigo</option>
+            <option value="bg-orange-500">Orange</option>
+            <option value="bg-teal-500">Teal</option>
+            <option value="bg-cyan-500">Cyan</option>
+            <option value="bg-pink-500">Pink</option>
+          </select>
+          <button onclick="addCategory()" class="bg-accent hover:bg-opacity-80 text-white p-2 rounded transition flex items-center">
+            <i class="fas fa-plus mr-1"></i> Add
+          </button>
+        </div>
+      </div>
+      
+      <div>
+        <h3 class="font-bold mb-2 flex items-center">
+          <i class="fas fa-list-ul mr-2 text-accent"></i>
+          Existing Categories
+        </h3>
+        <div id="category-list" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+          <!-- Categories will be listed here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool Management Modal -->
+  <div id="tool-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold flex items-center">
+          <i class="fas fa-tools mr-2 text-accent"></i>
+          Manage Tools
+        </h2>
+        <button onclick="closeModal('tool-modal')" class="text-xl hover:text-accent transition">&times;</button>
+      </div>
+      
+      <div class="mb-4">
+        <label for="selected-category" class="block mb-2 flex items-center">
+          <i class="fas fa-tag mr-2 text-accent"></i>
+          Category:
+        </label>
+        <select id="selected-category" class="w-full p-2 rounded bg-card text-primary border border-opacity-20 focus:outline-none focus:ring-2 focus:ring-accent">
+          <!-- Categories will be populated here -->
+        </select>
+      </div>
+      
+      <div class="mb-6">
+        <h3 class="font-bold mb-2 flex items-center">
+          <i class="fas fa-plus-circle mr-2 text-accent"></i>
+          Add New Tool
+        </h3>
+        <div class="flex gap-2">
+          <input type="text" id="new-tool-name" placeholder="Tool name" class="flex-grow p-2 rounded bg-card text-primary border border-opacity-20 focus:outline-none focus:ring-2 focus:ring-accent">
+          <button onclick="addTool()" class="bg-accent hover:bg-opacity-80 text-white p-2 rounded transition flex items-center">
+            <i class="fas fa-plus mr-1"></i> Add
+          </button>
+        </div>
+      </div>
+      
+      <div>
+        <h3 class="font-bold mb-2 flex items-center">
+          <i class="fas fa-list-ul mr-2 text-accent"></i>
+          Existing Tools
+        </h3>
+        <div id="tool-list" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+          <!-- Tools will be listed here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Floating Button -->
+  <div class="fixed bottom-6 right-6 z-40">
+    <button id="quick-actions" class="bg-accent text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-opacity-90 transition transform hover:scale-110">
+      <i class="fas fa-bolt text-xl"></i>
+    </button>
+    <div id="quick-actions-menu" class="hidden absolute bottom-full right-0 mb-2 w-48 bg-card rounded-lg shadow-xl p-2 space-y-2">
+      <button onclick="openCategoryModal()" class="w-full text-left p-2 hover:bg-opacity-20 hover:bg-white rounded transition flex items-center">
+        <i class="fas fa-tags mr-2 text-accent"></i> New Category
+      </button>
+      <button onclick="openToolModal()" class="w-full text-left p-2 hover:bg-opacity-20 hover:bg-white rounded transition flex items-center">
+        <i class="fas fa-tools mr-2 text-accent"></i> New Tool
+      </button>
+      <button onclick="showFavorites()" class="w-full text-left p-2 hover:bg-opacity-20 hover:bg-white rounded transition flex items-center">
+        <i class="fas fa-star mr-2 text-yellow-400"></i> Favorites
+      </button>
+    </div>
+  </div>
+
+  <main class="flex-grow p-6 mt-16">
+    <div class="p-4 sticky top-16 z-30 bg-primary bg-opacity-90 backdrop-blur-sm">
+      <div class="relative">
+        <input id="tool-search" type="text" placeholder="Search tools..." class="w-full p-3 pl-10 rounded-lg search-box focus:outline-none focus:ring-2 focus:ring-accent" aria-label="Search CTF tools">
+        <i class="fas fa-search absolute left-3 top-3.5 text-primary text-opacity-70"></i>
+      </div>
+    </div>
+    
+    <div id="categories" class="grid-stack gap-4">
+      <!-- Categories will be dynamically inserted here -->
+    </div>
+    
+    <section id="about" class="mt-8 p-6 bg-card rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-6 flex items-center">
+        <i class="fas fa-info-circle mr-3 text-accent"></i>
+        About CTF Helper
+      </h2>
+      <div class="space-y-6">
+        <div class="flex flex-col md:flex-row items-center gap-6">
+          <img src="me.jpg" alt="Thabiso Thelingoane" class="profile-img shadow-lg">
+          <div>
+            <h3 class="text-xl font-bold">Thabiso Thelingoane</h3>
+            <p class="text-accent font-mono">@GodOfTheNewWorld</p>
+            <p class="mt-2">CTF Player & Cybersecurity Expert</p>
+            <div class="mt-3 flex flex-wrap">
+              <span class="achievement-badge">
+                <i class="fas fa-trophy mr-2 text-yellow-400"></i>
+                Internet Society Lesotho CTF Winner
+              </span>
+              <span class="achievement-badge">
+                <i class="fas fa-trophy mr-2 text-yellow-400"></i>
+                Hackerverse CTF Champion
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-opacity-20 bg-accent p-4 rounded-lg">
+          <p class="font-medium">
+            <i class="fas fa-quote-left mr-2 text-accent"></i>
+            As a passionate CTF player and cybersecurity enthusiast, I created this tool to help fellow hackers and security researchers have all the essential tools at their fingertips.
+          </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-opacity-10 bg-white p-4 rounded-lg">
+            <h3 class="font-bold mb-3 flex items-center">
+              <i class="fas fa-star mr-2 text-yellow-400"></i>
+              Features
+            </h3>
+            <ul class="space-y-2">
+              <li class="flex items-start">
+                <i class="fas fa-check-circle mt-1 mr-2 text-green-400"></i>
+                <span>150+ curated tools across 12 CTF categories</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle mt-1 mr-2 text-green-400"></i>
+                <span>Favorites system for quick access</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle mt-1 mr-2 text-green-400"></i>
+                <span>Dark/light theme with toggle switch</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle mt-1 mr-2 text-green-400"></i>
+                <span>Offline capability (PWA)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle mt-1 mr-2 text-green-400"></i>
+                <span>Instant search functionality</span>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="bg-opacity-10 bg-white p-4 rounded-lg">
+            <h3 class="font-bold mb-3 flex items-center">
+              <i class="fas fa-code mr-2"></i>
+              Technologies
+            </h3>
+            <ul class="space-y-2">
+              <li class="flex items-start">
+                <i class="fas fa-cog mt-1 mr-2 text-accent"></i>
+                <span>HTML5, CSS3, JavaScript (ES6+)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-cog mt-1 mr-2 text-accent"></i>
+                <span>Tailwind CSS for modern styling</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-cog mt-1 mr-2 text-accent"></i>
+                <span>Font Awesome for icons</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-cog mt-1 mr-2 text-accent"></i>
+                <span>Progressive Web App technology</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-cog mt-1 mr-2 text-accent"></i>
+                <span>LocalStorage for offline data</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="text-center pt-4 border-t border-opacity-20">
+          <p class="text-sm text-opacity-70">
+            Version 2.1 © 2025 - Created with passion for the cybersecurity community
+          </p>
+          <p class="mt-2 text-xs text-opacity-50">
+            Dedicated to all CTF players pushing the boundaries of cybersecurity
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <footer class="bg-header p-4 text-center text-sm">
+    <p>CTF Helper © 2025 - Created by <span class="text-accent font-bold">GodOfTheNewWorld</span></p>
+  </footer>
+  
+  <script>
+    // Initialize ctfCategories with default data or from localStorage
+    let ctfCategories = JSON.parse(localStorage.getItem('ctfCategories')) || [
+      {
+        name: "Pwn",
+        tools: [
+          "pwntools",
+          "GDB (with GEF/Pwndbg)",
+          "ROPgadget",
+          "strace",
+          "ltrace",
+          "checksec",
+          "one_gadget",
+          "msfvenom",
+          "Pwndbg",
+          "Qira",
+          "Libc-database",
+          "Seccomp-tools",
+          "angr",
+          "radare2",
+          "Binary Ninja"
+        ],
+        color: "bg-red-500"
+      },
+      {
+        name: "Web Exploitation",
+        tools: [
+          "Burp Suite",
+          "sqlmap",
+          "dirb",
+          "nikto",
+          "Postman",
+          "cURL",
+          "Developer Tools (Browser)",
+          "w3af",
+          "XSStrike",
+          "OWASP ZAP",
+          "Commix",
+          "Gobuster",
+          "HackTricks",
+          "FFUF",
+          "WPScan",
+          "JWT Tool",
+          "NoSQLMap"
+        ],
+        color: "bg-blue-500"
+      },
+      {
+        name: "Forensics",
+        tools: [
+          "Wireshark",
+          "Autopsy",
+          "binwalk",
+          "foremost",
+          "exiftool",
+          "steghide",
+          "Volatility",
+          "Forensically",
+          "KAPE",
+          "Audacity",
+          "NetworkMiner",
+          "Sonic Visualiser",
+          "USBRip",
+          "Fibratus",
+          "Bulk Extractor",
+          "Plaso",
+          "FTK Imager"
+        ],
+        color: "bg-green-500"
+      },
+      {
+        name: "Crypto",
+        tools: [
+          "CyberChef",
+          "Hashcat",
+          "John the Ripper",
+          "SageMath",
+          "OpenSSL",
+          "z3-solver",
+          "QuipQuip",
+          "Big Numbers Calculator",
+          "RsaCtfTool",
+          "FeatherDuster",
+          "Cryptii",
+          "XORTool",
+          "PkCrack",
+          "Hash Extender",
+          "RSACTFTool",
+          "Padding Oracle Exploit Tool"
+        ],
+        color: "bg-yellow-500"
+      },
+      {
+        name: "Reverse Engineering",
+        tools: [
+          "IDA Free",
+          "Ghidra",
+          "Radare2",
+          "Binary Ninja",
+          "objdump",
+          "strings",
+          "Online Decompiler",
+          "Frida",
+          "Cutter",
+          "Hopper",
+          "dnSpy",
+          "apktool",
+          "Androguard",
+          "ILSpy",
+          "JD-GUI",
+          "GDB"
+        ],
+        color: "bg-purple-500"
+      },
+      {
+        name: "Networking",
+        tools: [
+          "Nmap",
+          "Netcat",
+          "tcpdump",
+          "Metasploit",
+          "Aircrack-ng",
+          "hping3",
+          "Bettercap",
+          "dns2tcp",
+          "Masscan",
+          "tshark",
+          "Zmap",
+          "Yersinia",
+          "Responder",
+          "Impacket",
+          "Scapy"
+        ],
+        color: "bg-indigo-500"
+      },
+      {
+        name: "OSINT",
+        tools: [
+          "Sherlock",
+          "Wayback Machine",
+          "Email Lookup",
+          "Maltego",
+          "theHarvester",
+          "Amass",
+          "Recon-ng",
+          "Shodan",
+          "IntelTechniques",
+          "SpiderFoot",
+          "OSINT Framework",
+          "GHunt",
+          "Tinfoleak"
+        ],
+        color: "bg-orange-500"
+      },
+      {
+        name: "Steganography",
+        tools: [
+          "Stegsolve",
+          "SteNetworksgoVeritas",
+          "zsteg",
+          "StegCracker",
+          "Snow",
+          "Stegano-tools",
+          "Stegosuite",
+          "OpenStego",
+          "Steghide",
+          "OutGuess",
+          "StegDetect"
+        ],
+        color: "bg-teal-500"
+      },
+      {
+        name: "Blockchain",
+        tools: [
+          "ethers.js",
+          "Foundry",
+          "web3.js",
+          "Remix IDE",
+          "Slither",
+          "Mythril",
+          "Hardhat",
+          "Brownie",
+          "Ganache",
+          "Truffle",
+          "Ethlint"
+        ],
+        color: "bg-cyan-500"
+      },
+      {
+        name: "Password Cracking",
+        tools: [
+          "John the Ripper",
+          "Hashcat",
+          "Hydra",
+          "Medusa",
+          "Ncrack",
+          "Patator",
+          "THC-Hydra",
+          "CeWL",
+          "Crunch",
+          "RSMangler",
+          "Hash-Identifier",
+          "RainbowCrack",
+          "Ophcrack"
+        ],
+        color: "bg-pink-500"
+      },
+      {
+        name: "Binary Exploitation",
+        tools: [
+          "pwntools",
+          "ROPgadget",
+          "one_gadget",
+          "LibcSearcher",
+          "DynELF",
+          "Ropper",
+          "ret2dlresolve",
+          "House of Force",
+          "House of Spirit",
+          "HeapLAB",
+          "gef-extra"
+        ],
+        color: "bg-amber-500"
+      },
+      {
+        name: "Mobile Security",
+        tools: [
+          "Frida",
+          "Objection",
+          "MobSF",
+          "jadx",
+          "apktool",
+          "dex2jar",
+          "Burp Suite Mobile",
+          "Android Debug Bridge",
+          "iOS SSL Kill Switch",
+          "Needle"
+        ],
+        color: "bg-emerald-500"
+      }
+    ];
+
+    // Save categories to localStorage
+    function saveCategories() {
+      localStorage.setItem('ctfCategories', JSON.stringify(ctfCategories));
+    }
+
+    const categoriesContainer = document.getElementById("categories");
+    const menuToggle = document.getElementById("menu-toggle");
+    const sidebar = document.getElementById("sidebar");
+    const themeToggle = document.getElementById("theme-toggle-checkbox");
+    const quickActionsBtn = document.getElementById("quick-actions");
+    const quickActionsMenu = document.getElementById("quick-actions-menu");
+
+    function toggleMenu() {
+      sidebar.classList.toggle("sidebar-open");
+      const isExpanded = sidebar.classList.contains("sidebar-open");
+      menuToggle.setAttribute("aria-expanded", isExpanded);
+      sidebar.setAttribute("aria-hidden", !isExpanded);
+      
+      // Close quick actions menu if open
+      quickActionsMenu.classList.add("hidden");
+    }
+
+    function scrollToSection(sectionId) {
+      document.getElementById(sectionId).scrollIntoView({ behavior: "smooth" });
+      if (sidebar.classList.contains("sidebar-open")) toggleMenu();
+    }
+
+    function toggleFavorite(tool, categoryName) {
+      let favorites = JSON.parse(localStorage.getItem("favorites") || "{}");
+      if (!favorites[categoryName]) favorites[categoryName] = [];
+      if (favorites[categoryName].includes(tool)) {
+        favorites[categoryName] = favorites[categoryName].filter(t => t !== tool);
+        showToast(`${tool} removed from favorites`, "warning");
+      } else {
+        favorites[categoryName].push(tool);
+        showToast(`${tool} added to favorites`, "success");
+      }
+      localStorage.setItem("favorites", JSON.stringify(favorites));
+      renderCategories();
+    }
+
+    function showToast(message, type) {
+      const toast = document.createElement("div");
+      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-white ${
+        type === "success" ? "bg-green-500" : "bg-yellow-500"
+      } flex items-center fade-in`;
+      
+      toast.innerHTML = `
+        <i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"} mr-2"></i>
+        ${message}
+      `;
+      
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "transition-opacity", "duration-300");
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function showFavorites() {
+      let favorites = JSON.parse(localStorage.getItem("favorites") || "{}");
+      let favoriteTools = [];
+      Object.keys(favorites).forEach(cat => {
+        favoriteTools = favoriteTools.concat(favorites[cat].map(tool => ({ tool, category: cat })));
+      });
+      if (favoriteTools.length) {
+        renderCategories([{
+          name: "Favorites ★",
+          tools: favoriteTools.map(t => t.tool),
+          color: "bg-gradient-to-r from-purple-500 to-pink-500",
+          isFavorites: true
+        }]);
+        showToast("Showing your favorite tools", "success");
+      } else {
+        renderCategories([]);
+        showToast("You have no favorite tools yet", "warning");
+      }
+      scrollToSection("categories");
+    }
+
+    function renderCategories(filteredCategories = ctfCategories) {
+      let favorites = JSON.parse(localStorage.getItem("favorites") || "{}");
+      let favoriteTools = [];
+      Object.keys(favorites).forEach(cat => {
+        favoriteTools = favoriteTools.concat(favorites[cat].map(tool => ({ tool, category: cat })));
+      });
+      
+      const allCategories = favoriteTools.length && filteredCategories === ctfCategories ? [{
+        name: "Favorites ★",
+        tools: favoriteTools.map(t => t.tool),
+        color: "bg-gradient-to-r from-purple-500 to-pink-500",
+        isFavorites: true
+      }, ...filteredCategories] : filteredCategories;
+
+      categoriesContainer.innerHTML = "";
+      
+      if (allCategories.length === 0) {
+        categoriesContainer.innerHTML = `
+          <div class="col-span-full text-center py-10">
+            <i class="fas fa-search text-4xl mb-4 text-primary text-opacity-50"></i>
+            <h3 class="text-xl font-bold">No tools found</h3>
+            <p class="mt-2">Try a different search term or add some tools</p>
+          </div>
+        `;
+        return;
+      }
+
+      allCategories.forEach((category, index) => {
+        const categoryDiv = document.createElement("div");
+        categoryDiv.className = "tool-card bg-card rounded-lg shadow-md overflow-hidden fade-in";
+        categoryDiv.innerHTML = `
+          <button class="w-full text-left p-4 font-semibold text-lg ${category.color} hover:brightness-110 transition duration-200 flex justify-between items-center" 
+                  onclick="toggleTools(this)" 
+                  aria-expanded="false" 
+                  aria-controls="tools-${index}">
+            <span>${category.name}</span>
+            <span class="text-xs bg-black bg-opacity-20 px-2 py-1 rounded-full">${category.tools.length} tools</span>
+          </button>
+          <div class="tools hidden p-4 bg-opacity-20 bg-white" id="tools-${index}">
+            <ul class="space-y-3">
+              ${category.tools.map(tool => `
+                <li class="flex justify-between items-center p-2 hover:bg-opacity-10 hover:bg-white rounded transition">
+                  <span>${tool}</span>
+                  <button onclick="toggleFavorite('${tool}', '${category.isFavorites ? favoriteTools.find(t => t.tool === tool)?.category : category.name}')" 
+                          class="text-yellow-400 hover:text-yellow-300 transition" 
+                          aria-label="Toggle favorite for ${tool}">
+                    ${favorites[category.isFavorites ? favoriteTools.find(t => t.tool === tool)?.category : category.name]?.includes(tool) ? 
+                      '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>'}
+                  </button>
+                </li>
+              `).join("")}
+            </ul>
+            ${!category.isFavorites ? `
+            <div class="mt-3 pt-3 border-t border-opacity-20 flex justify-end">
+              <button onclick="openToolModalForCategory(${ctfCategories.findIndex(c => c.name === category.name)})" 
+                      class="text-sm text-accent hover:underline flex items-center">
+                <i class="fas fa-plus mr-1"></i> Add Tool
+              </button>
+            </div>
+            ` : ''}
+          </div>
+        `;
+        categoriesContainer.appendChild(categoryDiv);
+      });
+    }
+
+    function toggleTools(button) {
+      const toolsDiv = button.nextElementSibling;
+      const isExpanded = !toolsDiv.classList.contains("hidden");
+      toolsDiv.classList.toggle("hidden");
+      button.setAttribute("aria-expanded", !isExpanded);
+      
+      // Animate height
+      if (!toolsDiv.classList.contains("hidden")) {
+        toolsDiv.style.maxHeight = "0";
+        setTimeout(() => {
+          toolsDiv.style.maxHeight = toolsDiv.scrollHeight + "px";
+        }, 10);
+      } else {
+        toolsDiv.style.maxHeight = "0";
+      }
+    }
+
+    function toggleTheme() {
+      const newTheme = themeToggle.checked ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    }
+
+    // Modal functions
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        modal.classList.add('show');
+      }, 10);
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
+
+    function openCategoryModal() {
+      openModal('category-modal');
+      renderCategoryList();
+      if (sidebar.classList.contains("sidebar-open")) toggleMenu();
+    }
+
+    function openToolModal() {
+      openModal('tool-modal');
+      renderToolCategorySelect();
+      renderToolList();
+      if (sidebar.classList.contains("sidebar-open")) toggleMenu();
+    }
+
+    // Category CRUD functions
+    function renderCategoryList() {
+      const categoryList = document.getElementById('category-list');
+      categoryList.innerHTML = '';
+      
+      ctfCategories.forEach((category, index) => {
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'flex justify-between items-center p-3 bg-opacity-10 bg-white rounded-lg fade-in';
+        categoryItem.innerHTML = `
+          <span class="${category.color} px-3 py-1 rounded-full text-sm font-medium">${category.name}</span>
+          <div class="flex gap-2">
+            <button onclick="editCategory(${index})" class="text-blue-400 hover:text-blue-300 transition">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteCategory(${index})" class="text-red-400 hover:text-red-300 transition">
+              <i class="fas fa-trash"></i>
+            </button>
+            <button onclick="openToolModalForCategory(${index})" class="text-green-400 hover:text-green-300 transition">
+              <i class="fas fa-tools"></i>
+            </button>
+          </div>
+        `;
+        categoryList.appendChild(categoryItem);
+      });
+    }
+
+    function addCategory() {
+      const nameInput = document.getElementById('new-category-name');
+      const colorSelect = document.getElementById('new-category-color');
+      
+      const name = nameInput.value.trim();
+      const color = colorSelect.value;
+      
+      if (!name) {
+        showToast('Please enter a category name', 'warning');
+        return;
+      }
+      
+      if (ctfCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+        showToast('Category already exists', 'warning');
+        return;
+      }
+      
+      ctfCategories.push({
+        name,
+        tools: [],
+        color
+      });
+      
+      saveCategories();
+      nameInput.value = '';
+      renderCategoryList();
+      renderCategories();
+      showToast(`Category "${name}" added`, 'success');
+    }
+
+    function editCategory(index) {
+      const newName = prompt('Enter new category name:', ctfCategories[index].name);
+      if (newName && newName.trim()) {
+        ctfCategories[index].name = newName.trim();
+        saveCategories();
+        renderCategoryList();
+        renderCategories();
+        showToast('Category updated', 'success');
+      }
+    }
+
+    function deleteCategory(index) {
+      if (confirm(`Are you sure you want to delete "${ctfCategories[index].name}"? This will also delete all tools in this category.`)) {
+        const deletedName = ctfCategories[index].name;
+        ctfCategories.splice(index, 1);
+        saveCategories();
+        renderCategoryList();
+        renderCategories();
+        showToast(`Category "${deletedName}" deleted`, 'warning');
+      }
+    }
+
+    // Tool CRUD functions
+    function renderToolCategorySelect() {
+      const select = document.getElementById('selected-category');
+      select.innerHTML = '';
+      
+      ctfCategories.forEach((category, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = category.name;
+        select.appendChild(option);
+      });
+    }
+
+    function openToolModalForCategory(categoryIndex) {
+      openModal('tool-modal');
+      document.getElementById('selected-category').value = categoryIndex;
+      renderToolList();
+    }
+
+    function renderToolList() {
+      const toolList = document.getElementById('tool-list');
+      toolList.innerHTML = '';
+      
+      const categoryIndex = document.getElementById('selected-category').value;
+      if (categoryIndex === '') return;
+      
+      const category = ctfCategories[categoryIndex];
+      
+      category.tools.forEach((tool, toolIndex) => {
+        const toolItem = document.createElement('div');
+        toolItem.className = 'flex justify-between items-center p-3 bg-opacity-10 bg-white rounded-lg fade-in';
+        toolItem.innerHTML = `
+          <span class="truncate">${tool}</span>
+          <div class="flex gap-2">
+            <button onclick="editTool(${categoryIndex}, ${toolIndex})" class="text-blue-400 hover:text-blue-300 transition">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteTool(${categoryIndex}, ${toolIndex})" class="text-red-400 hover:text-red-300 transition">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        toolList.appendChild(toolItem);
+      });
+    }
+
+    function addTool() {
+      const toolInput = document.getElementById('new-tool-name');
+      const categoryIndex = document.getElementById('selected-category').value;
+      
+      const toolName = toolInput.value.trim();
+      
+      if (!toolName) {
+        showToast('Please enter a tool name', 'warning');
+        return;
+      }
+      
+      if (ctfCategories[categoryIndex].tools.includes(toolName)) {
+        showToast('Tool already exists in this category', 'warning');
+        return;
+      }
+      
+      ctfCategories[categoryIndex].tools.push(toolName);
+      saveCategories();
+      toolInput.value = '';
+      renderToolList();
+      renderCategories();
+      showToast(`Tool "${toolName}" added to ${ctfCategories[categoryIndex].name}`, 'success');
+    }
+
+    function editTool(categoryIndex, toolIndex) {
+      const newName = prompt('Enter new tool name:', ctfCategories[categoryIndex].tools[toolIndex]);
+      if (newName && newName.trim()) {
+        ctfCategories[categoryIndex].tools[toolIndex] = newName.trim();
+        saveCategories();
+        renderToolList();
+        renderCategories();
+        showToast('Tool updated', 'success');
+      }
+    }
+
+    function deleteTool(categoryIndex, toolIndex) {
+      if (confirm(`Are you sure you want to delete "${ctfCategories[categoryIndex].tools[toolIndex]}"?`)) {
+        const deletedTool = ctfCategories[categoryIndex].tools[toolIndex];
+        ctfCategories[categoryIndex].tools.splice(toolIndex, 1);
+        saveCategories();
+        renderToolList();
+        renderCategories();
+        showToast(`Tool "${deletedTool}" deleted`, 'warning');
+      }
+    }
+
+    // Event listeners
+    document.getElementById("tool-search").addEventListener("input", function(e) {
+      const query = e.target.value.toLowerCase();
+      const filteredCategories = ctfCategories.map(category => ({
+        ...category,
+        tools: category.tools.filter(tool => tool.toLowerCase().includes(query))
+      })).filter(category => category.tools.length > 0);
+      renderCategories(filteredCategories);
+    });
+
+    menuToggle.addEventListener("click", toggleMenu);
+    themeToggle.addEventListener("change", toggleTheme);
+    
+    quickActionsBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      quickActionsMenu.classList.toggle("hidden");
+    });
+    
+    document.addEventListener("click", function() {
+      quickActionsMenu.classList.add("hidden");
+    });
+    
+    quickActionsMenu.addEventListener("click", function(e) {
+      e.stopPropagation();
+    });
+
+    // Initialize
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    themeToggle.checked = savedTheme === "light";
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js")
+          .then(reg => console.log("Service Worker registered"))
+          .catch(err => console.log("Service Worker registration failed:", err));
+      });
+    }
+
+    renderCategories();
+  </script>
+</body>
+</html>
